@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import Logo from './components/Logo';
 import { SocketProvider } from './contexts/SocketContext';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { useSocket } from './contexts/SocketContext';
 import QRCodeDisplay from './components/QRCodeDisplay';
@@ -103,48 +104,64 @@ function App() {
             onDrop={handleDrop}
           >
 
-            {activeTab === 'send' ? (
-              <div className="flex flex-col items-center space-y-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className={`
-                     w-40 h-40 rounded-full flex items-center justify-center transition-all duration-500
-                     ${isDragging ? 'bg-[#00CFD6]/20 scale-110' : 'bg-gradient-to-tr from-blue-500/10 to-[#00CFD6]/10 border border-white/5 group-hover:scale-105'}
-                  `}>
-                  <Logo size={96} className={`transition-transform duration-500 ${isDragging ? 'scale-110' : ''}`} color="#00CFD6" />
-                </div>
+            <AnimatePresence mode="wait">
+              {activeTab === 'send' ? (
+                <motion.div
+                  key="send"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="flex flex-col items-center space-y-8 py-8"
+                >
+                  <div className={`
+                       w-40 h-40 rounded-full flex items-center justify-center transition-all duration-500
+                       ${isDragging ? 'bg-[#00CFD6]/20 scale-110' : 'bg-gradient-to-tr from-blue-500/10 to-[#00CFD6]/10 border border-white/5 group-hover:scale-105'}
+                    `}>
+                    <Logo size={96} className={`transition-transform duration-500 ${isDragging ? 'scale-110' : ''}`} color="#00CFD6" />
+                  </div>
 
-                <div className="text-center space-y-2">
-                  <h3 className="text-2xl font-bold text-white">
-                    {selectedFiles.length > 0 ? `${selectedFiles.length} File(s) Selected` : (isDragging ? 'Drop files to send' : 'Upload Files')}
-                  </h3>
-                  <p className="text-slate-400 max-w-[200px] mx-auto leading-relaxed">
-                    {selectedFiles.length > 0 ? selectedFiles.map(f => f.name).join(', ') : 'Drag and drop your files here or click to browse'}
-                  </p>
-                </div>
+                  <div className="text-center space-y-2">
+                    <h3 className="text-2xl font-bold text-white">
+                      {selectedFiles.length > 0 ? `${selectedFiles.length} File(s) Selected` : (isDragging ? 'Drop files to send' : 'Upload Files')}
+                    </h3>
+                    <p className="text-slate-400 max-w-[200px] mx-auto leading-relaxed">
+                      {selectedFiles.length > 0 ? selectedFiles.map(f => f.name).join(', ') : 'Drag and drop your files here or click to browse'}
+                    </p>
+                  </div>
 
-                <label className="cursor-pointer px-10 py-4 bg-white text-black font-bold rounded-2xl hover:bg-[#00CFD6] hover:text-white hover:scale-105 hover:shadow-[0_0_30px_rgba(0,207,214,0.3)] transition-all duration-300 transform active:scale-95">
-                  Choose Files
-                  <input type="file" multiple className="hidden" onChange={handleFileSelect} />
-                </label>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center space-y-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <div className="relative group cursor-pointer">
-                  {/* QR Code Display */}
-                  {socket?.id ? (
-                    <QRCodeDisplay text={socket.id} width={256} />
-                  ) : (
-                    <div className="w-64 h-64 bg-[#0A0A0B] rounded-2xl border border-white/10 flex items-center justify-center">
-                      <span className="text-slate-500 font-mono text-sm tracking-wider animate-pulse">Connecting...</span>
-                    </div>
-                  )}
-                </div>
+                  <label className="cursor-pointer px-10 py-4 bg-white text-black font-bold rounded-2xl hover:bg-[#00CFD6] hover:text-white hover:scale-105 hover:shadow-[0_0_30px_rgba(0,207,214,0.3)] transition-all duration-300 transform active:scale-95">
+                    Choose Files
+                    <input type="file" multiple className="hidden" onChange={handleFileSelect} />
+                  </label>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="receive"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="flex flex-col items-center space-y-8 py-8"
+                >
+                  <div className="relative group cursor-pointer">
+                    {/* QR Code Display */}
+                    {socket?.id ? (
+                      <QRCodeDisplay text={socket.id} width={256} />
+                    ) : (
+                      <div className="w-64 h-64 bg-[#0A0A0B] rounded-2xl border border-white/10 flex items-center justify-center">
+                        <span className="text-slate-500 font-mono text-sm tracking-wider animate-pulse">Connecting...</span>
+                      </div>
+                    )}
+                  </div>
 
-                <div className="w-full">
-                  <p className="text-sm text-center text-slate-500 mb-4 uppercase tracking-widest font-semibold">Your ID: <span className="text-[#00CFD6] select-all">{socket?.id?.slice(0, 6)}...</span></p>
-                  {/* Placeholder for manual code entry if needed later */}
-                </div>
-              </div>
-            )}
+                  <div className="w-full">
+                    <p className="text-sm text-center text-slate-500 mb-4 uppercase tracking-widest font-semibold">Your ID: <span className="text-[#00CFD6] select-all">{socket?.id?.slice(0, 6)}...</span></p>
+                    {/* Placeholder for manual code entry if needed later */}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
           </div>
         </div>
