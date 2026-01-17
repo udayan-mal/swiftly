@@ -1,7 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Platform, Alert } from 'react-native';
 import { io } from "socket.io-client";
 import { useEffect, useState } from 'react';
+import Scanner from './src/components/Scanner';
 
 // Replace with your computer's local IP address (e.g., 192.168.1.X)
 // 'localhost' only works on iOS Simulator, use '10.0.2.2' for Android Emulator
@@ -10,6 +11,8 @@ const SERVER_URL = 'http://192.168.1.5:3001';
 export default function App() {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [view, setView] = useState('home'); // 'home' | 'scanner'
+  const [targetId, setTargetId] = useState(null);
 
   useEffect(() => {
     const newSocket = io(SERVER_URL, {
@@ -31,6 +34,17 @@ export default function App() {
     return () => newSocket.close();
   }, []);
 
+  const handleScan = (data) => {
+    setTargetId(data);
+    setView('home');
+    Alert.alert("Connected!", `Paired with ${data}`);
+    // Here we would trigger the signaling handshake
+  };
+
+  if (view === 'scanner') {
+    return <Scanner onScanned={handleScan} onCancel={() => setView('home')} />;
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
@@ -45,12 +59,21 @@ export default function App() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.heroText}>Transfer files{'\n'}<Text style={styles.heroAccent}>without friction.</Text></Text>
+        {targetId ? (
+          <View>
+            <Text style={styles.heroText}>Ready to{'\n'}<Text style={styles.heroAccent}>Transfer.</Text></Text>
+            <Text style={{ color: 'gray', marginBottom: 20 }}>Connected to: {targetId}</Text>
+          </View>
+        ) : (
+          <Text style={styles.heroText}>Transfer files{'\n'}<Text style={styles.heroAccent}>without friction.</Text></Text>
+        )}
 
         <View style={styles.card}>
-          <TouchableOpacity style={styles.buttonPrimary}>
-            <Text style={styles.buttonText}>Scan to Connect</Text>
-          </TouchableOpacity>
+          {!targetId && (
+            <TouchableOpacity style={styles.buttonPrimary} onPress={() => setView('scanner')}>
+              <Text style={styles.buttonText}>Scan to Connect</Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity style={styles.buttonSecondary}>
             <Text style={styles.buttonTextSecondary}>Select File</Text>
