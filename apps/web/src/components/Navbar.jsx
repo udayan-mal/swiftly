@@ -1,28 +1,16 @@
 import React from 'react';
+import Logo from './Logo';
 
 export default function Navbar() {
     return (
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/5">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo Section */}
                     <div className="flex-shrink-0 flex items-center gap-3 cursor-pointer group">
-                        {/* CSS/SVG Logo Icon */}
-                        <div className="relative w-8 h-8 flex items-center justify-center">
-                            <div className="absolute inset-0 bg-gradient-to-tr from-blue-500 to-emerald-500 rounded-lg transform rotate-6 group-hover:rotate-12 transition-transform duration-300"></div>
-                            <div className="absolute inset-0 bg-slate-900 rounded-lg transform scale-90"></div>
-                            <svg
-                                className="relative w-5 h-5 text-white transform -rotate-12 group-hover:rotate-0 transition-transform duration-300"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
+                        <Logo className="w-8 h-8 md:w-10 md:h-10 transition-transform duration-300 group-hover:scale-110" />
 
-                        {/* Text Logo */}
-                        <span className="font-bold text-xl tracking-tight text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-emerald-400 transition-all duration-300">
+                        <span className="font-bold text-xl tracking-tight text-white group-hover:text-[#00CFD6] transition-colors duration-300 font-sans">
                             Swiftly
                         </span>
                     </div>

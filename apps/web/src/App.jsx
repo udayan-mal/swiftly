@@ -1,31 +1,50 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
+import Logo from './components/Logo';
 
 function App() {
   const [activeTab, setActiveTab] = useState('send');
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    // Handle file drop logic here
+    console.log('Files dropped', e.dataTransfer.files);
+  };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0B] text-white selection:bg-blue-500/30 font-sans">
+    <div className="min-h-screen bg-[#0A0A0B] text-white selection:bg-[#00CFD6]/30 font-sans overflow-hidden">
       {/* Background Gradients */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-500/5 rounded-full blur-[120px]"></div>
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[#00CFD6]/10 rounded-full blur-[120px] animate-pulse-slow"></div>
       </div>
 
       <Navbar />
 
-      <main className="relative pt-32 px-4 pb-12 flex flex-col items-center min-h-screen w-full max-w-7xl mx-auto">
+      <main className="relative pt-32 px-4 pb-12 flex flex-col items-center min-h-screen w-full max-w-7xl mx-auto z-10">
 
         {/* Hero Section */}
-        <div className="text-center mb-16 max-w-3xl mx-auto space-y-6">
-          <div className="inline-flex items-center px-3 py-1 rounded-full border border-slate-800 bg-slate-900/50 backdrop-blur-sm mb-4">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-400 mr-2 animate-pulse"></span>
-            <span className="text-xs text-slate-400 font-medium tracking-wide uppercase">System Operational</span>
+        <div className="text-center mb-12 max-w-3xl mx-auto space-y-6">
+          <div className="inline-flex items-center px-4 py-1.5 rounded-full border border-white/5 bg-white/5 backdrop-blur-md mb-4 shadow-lg">
+            <span className="flex h-2 w-2 rounded-full bg-[#00CFD6] mr-3 animate-pulse"></span>
+            <span className="text-xs text-slate-300 font-medium tracking-widest uppercase">System Operational</span>
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white leading-[1.1]">
             Transfer files <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-400 to-emerald-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-[#00CFD6]">
               without friction.
             </span>
           </h1>
@@ -36,57 +55,77 @@ function App() {
         </div>
 
         {/* Action Panel */}
-        <div className="w-full max-w-md relative z-10">
+        <div className="w-full max-w-md relative">
+
           {/* Tab Switcher */}
-          <div className="flex p-1 bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 mb-6 relative">
+          <div className="grid grid-cols-2 p-1.5 bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-white/5 mb-8 relative shadow-2xl">
+            {/* Active Tab Background Pill */}
             <div
-              className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-slate-800 rounded-xl transition-all duration-300 shadow-lg ${activeTab === 'send' ? 'left-1' : 'left-[calc(50%+4px)]'}`}
+              className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-[#00CFD6]/10 border border-[#00CFD6]/20 rounded-xl transition-all duration-300 ease-out ${activeTab === 'send' ? 'left-1.5' : 'left-[calc(50%+4.5px)]'}`}
             ></div>
+
             <button
               onClick={() => setActiveTab('send')}
-              className={`flex-1 relative z-10 py-3 text-sm font-semibold transition-colors duration-200 ${activeTab === 'send' ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`relative z-10 py-3 text-sm font-bold transition-all duration-300 ${activeTab === 'send' ? 'text-[#00CFD6] shadow-[0_0_20px_rgba(0,207,214,0.1)]' : 'text-slate-500 hover:text-white'}`}
             >
               Send
             </button>
             <button
               onClick={() => setActiveTab('receive')}
-              className={`flex-1 relative z-10 py-3 text-sm font-semibold transition-colors duration-200 ${activeTab === 'receive' ? 'text-white' : 'text-slate-400 hover:text-slate-200'}`}
+              className={`relative z-10 py-3 text-sm font-bold transition-all duration-300 ${activeTab === 'receive' ? 'text-[#00CFD6] shadow-[0_0_20px_rgba(0,207,214,0.1)]' : 'text-slate-500 hover:text-white'}`}
             >
               Receive
             </button>
           </div>
 
           {/* Main Card */}
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl shadow-black/50 hover:border-slate-700/50 transition-colors duration-500 min-h-[400px] flex flex-col items-center justify-center text-center group">
+          <div
+            className={`
+              relative bg-slate-900/40 backdrop-blur-2xl border rounded-[2rem] p-8 shadow-2xl transition-all duration-500
+              ${isDragging ? 'border-[#00CFD6] bg-[#00CFD6]/5 scale-[1.02] shadow-[0_0_50px_rgba(0,207,214,0.15)]' : 'border-white/5 hover:border-white/10'}
+            `}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
 
             {activeTab === 'send' ? (
-              <div className="flex flex-col items-center space-y-6 animate-in fade-in zoom-in duration-300">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-blue-500/10 to-blue-600/5 border border-blue-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
-                  <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
+              <div className="flex flex-col items-center space-y-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className={`
+                   w-32 h-32 rounded-full flex items-center justify-center transition-all duration-500
+                   ${isDragging ? 'bg-[#00CFD6]/20 scale-110' : 'bg-gradient-to-tr from-blue-500/10 to-[#00CFD6]/10 border border-white/5 group-hover:scale-105'}
+                `}>
+                  <Logo className={`w-16 h-16 transition-transform duration-500 ${isDragging ? 'scale-110' : ''}`} color="#00CFD6" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-2">Upload Files</h3>
-                  <p className="text-sm text-slate-500 max-w-[200px]">Drag and drop your files here or click to browse</p>
+
+                <div className="text-center space-y-2">
+                  <h3 className="text-2xl font-bold text-white">
+                    {isDragging ? 'Drop files to send' : 'Upload Files'}
+                  </h3>
+                  <p className="text-slate-400 max-w-[200px] mx-auto leading-relaxed">
+                    Drag and drop your files here or click to browse
+                  </p>
                 </div>
-                <button className="mt-4 px-8 py-3 bg-white text-black font-semibold rounded-xl hover:bg-slate-200 transition-colors transform active:scale-95">
+
+                <button className="px-10 py-4 bg-white text-black font-bold rounded-2xl hover:bg-[#00CFD6] hover:text-white hover:scale-105 hover:shadow-[0_0_30px_rgba(0,207,214,0.3)] transition-all duration-300 transform active:scale-95">
                   Choose Files
                 </button>
               </div>
             ) : (
-              <div className="flex flex-col items-center space-y-6 animate-in fade-in zoom-in duration-300">
-                <div className="w-64 h-64 bg-black/40 rounded-2xl border-2 border-dashed border-slate-700 flex items-center justify-center relative overflow-hidden group-hover:border-emerald-500/30 transition-colors">
-                  <div className="absolute inset-0 bg-scan-line animate-scan pointer-events-none"></div>
-                  <span className="text-slate-600 font-mono text-xs">Waiting for QR Code...</span>
+              <div className="flex flex-col items-center space-y-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="relative group cursor-pointer">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-[#00CFD6] rounded-3xl opacity-20 group-hover:opacity-40 blur transition duration-500"></div>
+                  <div className="relative w-64 h-64 bg-[#0A0A0B] rounded-2xl border border-white/10 flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(68,68,68,.2)_50%,transparent_75%,transparent_100%)] bg-[length:250%_250%,100%_100%] bg-no-repeat animate-[shine_3s_infinite] opacity-20"></div>
+                    <span className="text-slate-500 font-mono text-sm tracking-wider">Generating QR...</span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-slate-400">
-                    Or enter 6-digit code
-                  </p>
-                  <div className="flex gap-2 mt-3">
+
+                <div className="w-full">
+                  <p className="text-sm text-center text-slate-500 mb-4 uppercase tracking-widest font-semibold">Or enter code</p>
+                  <div className="flex justify-center gap-3">
                     {[1, 2, 3, 4, 5, 6].map(i => (
-                      <div key={i} className="w-10 h-12 bg-slate-800 rounded-lg border border-slate-700"></div>
+                      <div key={i} className="w-12 h-14 bg-white/5 rounded-xl border border-white/5 focus:border-[#00CFD6] transition-colors"></div>
                     ))}
                   </div>
                 </div>
