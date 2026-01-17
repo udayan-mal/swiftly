@@ -1,20 +1,22 @@
 {
-    "name": "swiftly-mobile",
-    "version": "1.0.0",
-    "private": true,
-    "scripts": {
-        "android": "react-native run-android",
-        "ios": "react-native run-ios",
-        "start": "react-native start"
-    },
-    "dependencies": {
-        "react": "18.2.0",
-        "react-native": "0.73.4"
-    },
-    "devDependencies": {
-        "@babel/core": "^7.20.0",
-        "@babel/preset-env": "^7.20.0",
-        "@babel/runtime": "^7.20.0",
-        "react-test-renderer": "18.2.0"
-    }
+  "name": "mobile",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "expo": "~54.0.31",
+    "expo-camera": "~17.0.10",
+    "expo-file-system": "~19.0.21",
+    "expo-sharing": "~14.0.8",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "socket.io-client": "^4.8.3"
+  },
+  "private": true
 }

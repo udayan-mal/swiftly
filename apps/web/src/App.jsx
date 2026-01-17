@@ -155,9 +155,31 @@ function App() {
                     )}
                   </div>
 
-                  <div className="w-full">
-                    <p className="text-sm text-center text-slate-500 mb-4 uppercase tracking-widest font-semibold">Your ID: <span className="text-[#00CFD6] select-all">{socket?.id?.slice(0, 6)}...</span></p>
-                    {/* Placeholder for manual code entry if needed later */}
+                  <div className="w-full text-center">
+                    <p className="text-sm text-slate-500 mb-4 uppercase tracking-widest font-semibold">Your Connection ID</p>
+
+                    <div
+                      onClick={() => {
+                        if (socket?.id) {
+                          navigator.clipboard.writeText(socket.id);
+                          alert('ID Copied to clipboard!'); // Simple feedback for now, could be a toast later
+                        }
+                      }}
+                      className="group relative inline-flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00CFD6]/50 rounded-xl cursor-pointer transition-all duration-300"
+                    >
+                      <span className="font-mono text-[#00CFD6] text-lg select-all max-w-[280px] truncate sm:max-w-none sm:overflow-visible">
+                        {socket?.id || 'Connecting...'}
+                      </span>
+
+                      {/* Copy Icon */}
+                      <svg className="w-5 h-5 text-slate-500 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+
+                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-[#00CFD6] text-black text-xs font-bold rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Click to Copy
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}
