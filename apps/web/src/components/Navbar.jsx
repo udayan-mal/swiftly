@@ -2,7 +2,7 @@ import React from 'react';
 import Logo from './Logo';
 import { useSocket } from '../contexts/SocketContext';
 
-export default function Navbar() {
+export default function Navbar({ onHistoryClick, onConnectClick }) {
     // Safely destructure isConnected, defaulting to false if context is missing/loading
     const { isConnected } = useSocket() || { isConnected: false };
 
@@ -30,10 +30,16 @@ export default function Navbar() {
                     {/* Right Navigation */}
                     <div className="hidden md:block">
                         <div className="ml-10 flex items-baseline space-x-4">
-                            <button className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <button
+                                onClick={onHistoryClick}
+                                className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                            >
                                 History
                             </button>
-                            <button className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all border border-slate-700 hover:border-slate-600 shadow-lg shadow-black/20">
+                            <button
+                                onClick={onConnectClick}
+                                className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all border border-slate-700 hover:border-slate-600 shadow-lg shadow-black/20"
+                            >
                                 Connect Device
                             </button>
                         </div>

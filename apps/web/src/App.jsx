@@ -95,7 +95,13 @@ function App() {
         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-[#00CFD6]/10 rounded-full blur-[120px] animate-pulse-slow"></div>
       </div>
 
-      <Navbar />
+      <Navbar
+        onHistoryClick={() => alert('Transfer History coming soon!')}
+        onConnectClick={() => {
+          setActiveTab('send');
+          document.getElementById('connection-input')?.focus(); // Focus input if it exists
+        }}
+      />
 
       <main className="relative pt-32 px-4 pb-12 flex flex-col items-center min-h-screen w-full max-w-7xl mx-auto z-10">
 
@@ -173,6 +179,7 @@ function App() {
 
                     <div className="flex gap-2 relative">
                       <input
+                        id="connection-input"
                         type="text"
                         value={targetId}
                         onChange={(e) => setTargetId(e.target.value)}
