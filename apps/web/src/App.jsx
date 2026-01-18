@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Logo from './components/Logo';
 import { SocketProvider } from './contexts/SocketContext';
@@ -11,22 +11,41 @@ function App() {
   const [activeTab, setActiveTab] = useState('send');
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [targetId, setTargetId] = useState('');
-  const [isPaired, setIsPaired] = useState(false);
-  const { socket } = useSocket() || {};
 
-  const handleConnect = () => {
+  // Connection State Machine: 'idle' | 'connecting' | 'connected' | 'failed'
+  const [connectionStatus, setConnectionStatus] = useState('idle');
+  const [connectionError, setConnectionError] = useState('');
+  const [targetId, setTargetId] = useState('');
+
+  const { socket, pairDevice, incomingTransfer, acceptTransfer, declineTransfer, transferProgress } = useSocket() || {};
+
+  // Reset state on tab switch
+  useEffect(() => {
+    // Optional: could warn user here if they are connected
+  }, [activeTab]);
+
+  const handleConnect = async () => {
     if (!targetId.trim()) {
-      alert('Please enter a Connection ID');
+      setConnectionError('Please enter a Connection ID');
       return;
     }
     if (!socket) {
-      alert('Not connected to server');
+      setConnectionError('Not connected to server');
       return;
     }
-    // For now, just mark as paired - actual signaling will be added later
-    setIsPaired(true);
-    alert(`Paired with ${targetId}!`);
+
+    setConnectionStatus('connecting');
+    setConnectionError('');
+
+    try {
+      await pairDevice(targetId);
+      setConnectionStatus('connected');
+    } catch (err) {
+      setConnectionStatus('failed');
+      setConnectionError(err.message || 'Connection failed');
+      // Reset to idle after 3s so user can try again
+      setTimeout(() => setConnectionStatus('idle'), 3000);
+    }
   };
 
   const handleDragOver = (e) => {
@@ -53,6 +72,8 @@ function App() {
       setSelectedFiles(Array.from(e.target.files));
     }
   };
+
+  const isConnected = connectionStatus === 'connected';
 
   return (
     <div className="min-h-screen bg-[#0A0A0B] text-white selection:bg-[#00CFD6]/30 font-sans overflow-hidden">
@@ -132,42 +153,70 @@ function App() {
                 >
                   {/* Connect to Device Section */}
                   <div className="w-full space-y-4">
-                    <p className="text-sm text-slate-500 uppercase tracking-widest font-semibold text-center">Connect to Device</p>
-                    <div className="flex gap-2">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm text-slate-500 uppercase tracking-widest font-semibold">1. Connect Device</p>
+                      {connectionStatus === 'connecting' && <span className="text-xs text-[#00CFD6] animate-pulse">Connecting...</span>}
+                      {connectionStatus === 'failed' && <span className="text-xs text-red-400">{connectionError}</span>}
+                    </div>
+
+                    <div className="flex gap-2 relative">
                       <input
                         type="text"
                         value={targetId}
                         onChange={(e) => setTargetId(e.target.value)}
                         placeholder="Enter Connection ID"
-                        className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#00CFD6]/50 focus:ring-1 focus:ring-[#00CFD6]/30 transition-all"
+                        disabled={isConnected || connectionStatus === 'connecting'}
+                        className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#00CFD6]/50 focus:ring-1 focus:ring-[#00CFD6]/30 transition-all disabled:opacity-50"
                       />
+
+                      {/* Paste Button (only show if empty and supported) */}
+                      {!targetId && navigator.clipboard && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const text = await navigator.clipboard.readText();
+                              setTargetId(text);
+                            } catch (e) { console.error('Paste failed', e); }
+                          }}
+                          className="absolute right-[120px] top-1/2 -translate-y-1/2 p-1.5 text-xs bg-slate-800 rounded text-slate-400 hover:text-white"
+                        >
+                          PASTE
+                        </button>
+                      )}
+
                       <button
                         onClick={handleConnect}
-                        disabled={isPaired}
-                        className={`px-6 py-3 font-bold rounded-xl transition-all duration-300 ${isPaired
+                        disabled={isConnected || connectionStatus === 'connecting'}
+                        className={`px-6 py-3 font-bold rounded-xl transition-all duration-300 min-w-[100px] flex items-center justify-center ${isConnected
                           ? 'bg-green-500/20 text-green-400 border border-green-500/30 cursor-default'
-                          : 'bg-[#00CFD6] text-black hover:bg-[#00CFD6]/80 hover:scale-105'
+                          : 'bg-[#00CFD6] text-black hover:bg-[#00CFD6]/80 hover:scale-105 disabled:opacity-70 disabled:hover:scale-100'
                           }`}
                       >
-                        {isPaired ? '✓ Paired' : 'Connect'}
+                        {connectionStatus === 'connecting' ? (
+                          <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
+                        ) : isConnected ? (
+                          '✓ Paired'
+                        ) : (
+                          'Connect'
+                        )}
                       </button>
                     </div>
                   </div>
 
                   {/* Divider */}
                   <div className="w-full flex items-center gap-4">
-                    <div className="flex-1 h-px bg-white/10"></div>
-                    <span className="text-slate-500 text-sm">then select files</span>
-                    <div className="flex-1 h-px bg-white/10"></div>
+                    <div className={`flex-1 h-px transition-colors duration-300 ${isConnected ? 'bg-[#00CFD6]/30' : 'bg-white/10'}`}></div>
+                    <span className={`text-sm transition-colors duration-300 ${isConnected ? 'text-[#00CFD6]' : 'text-slate-600'}`}>2. Select Files</span>
+                    <div className={`flex-1 h-px transition-colors duration-300 ${isConnected ? 'bg-[#00CFD6]/30' : 'bg-white/10'}`}></div>
                   </div>
 
                   {/* File Selection */}
                   <div
-                    className={`w-full p-6 rounded-2xl border-2 border-dashed transition-all duration-300 ${isDragging ? 'border-[#00CFD6] bg-[#00CFD6]/10' : 'border-white/10 hover:border-white/20'
-                      } ${!isPaired ? 'opacity-50 pointer-events-none' : ''}`}
+                    className={`w-full p-6 rounded-2xl border-2 border-dashed transition-all duration-500 ${isDragging ? 'border-[#00CFD6] bg-[#00CFD6]/10' : 'border-white/10 hover:border-white/20'
+                      } ${!isConnected ? 'opacity-40 grayscale pointer-events-none' : ''}`}
                   >
                     <div className="flex flex-col items-center space-y-4">
-                      <Logo size={48} color={isPaired ? "#00CFD6" : "#666"} />
+                      <Logo size={48} color={isConnected ? "#00CFD6" : "#444"} />
                       <div className="text-center">
                         <h3 className="text-lg font-bold text-white">
                           {selectedFiles.length > 0 ? `${selectedFiles.length} File(s) Selected` : 'Select Files to Send'}
@@ -176,12 +225,12 @@ function App() {
                           {selectedFiles.length > 0 ? selectedFiles.map(f => f.name).join(', ') : 'Drag & drop or click below'}
                         </p>
                       </div>
-                      <label className={`cursor-pointer px-8 py-3 font-bold rounded-xl transition-all duration-300 ${isPaired
+                      <label className={`cursor-pointer px-8 py-3 font-bold rounded-xl transition-all duration-300 ${isConnected
                         ? 'bg-white text-black hover:bg-[#00CFD6] hover:text-white'
-                        : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                        : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                         }`}>
                         Choose Files
-                        <input type="file" multiple className="hidden" onChange={handleFileSelect} disabled={!isPaired} />
+                        <input type="file" multiple className="hidden" onChange={handleFileSelect} disabled={!isConnected} />
                       </label>
                     </div>
                   </div>
@@ -198,7 +247,10 @@ function App() {
                   <div className="relative group cursor-pointer">
                     {/* QR Code Display */}
                     {socket?.id ? (
-                      <QRCodeDisplay text={socket.id} width={256} />
+                      <div className="relative">
+                        <QRCodeDisplay text={socket.id} width={256} />
+                        {/* Overlay for instructions if needed, or keeping it clean */}
+                      </div>
                     ) : (
                       <div className="w-64 h-64 bg-[#0A0A0B] rounded-2xl border border-white/10 flex items-center justify-center">
                         <span className="text-slate-500 font-mono text-sm tracking-wider animate-pulse">Connecting...</span>
@@ -206,14 +258,17 @@ function App() {
                     )}
                   </div>
 
-                  <div className="w-full text-center">
-                    <p className="text-sm text-slate-500 mb-4 uppercase tracking-widest font-semibold">Your Connection ID</p>
+                  <div className="w-full text-center space-y-4">
+                    <div className="space-y-1">
+                      <p className="text-sm text-slate-500 uppercase tracking-widest font-semibold">Your Connection ID</p>
+                      <p className="text-xs text-slate-600">Scan QR or enter this code on sender</p>
+                    </div>
 
                     <div
                       onClick={() => {
                         if (socket?.id) {
                           navigator.clipboard.writeText(socket.id);
-                          alert('ID Copied to clipboard!'); // Simple feedback for now, could be a toast later
+                          alert('ID Copied to clipboard!');
                         }
                       }}
                       className="group relative inline-flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00CFD6]/50 rounded-xl cursor-pointer transition-all duration-300"
@@ -240,6 +295,78 @@ function App() {
         </div>
 
       </main>
+
+      {/* Incoming Transfer Modal */}
+      <AnimatePresence>
+        {incomingTransfer && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-[#121214] border border-white/10 rounded-3xl p-8 max-w-sm w-full shadow-2xl relative overflow-hidden"
+            >
+              {/* Glow Effect */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-[#00CFD6]"></div>
+
+              <div className="flex flex-col items-center text-center space-y-6">
+                <div className="w-16 h-16 rounded-full bg-[#00CFD6]/20 flex items-center justify-center">
+                  <Logo size={40} color="#00CFD6" />
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Incoming File Request</h3>
+                  <p className="text-slate-400 text-sm">
+                    <span className="text-white font-mono bg-white/10 px-1.5 py-0.5 rounded">{incomingTransfer.senderId.slice(0, 4)}...</span> wants to send:
+                  </p>
+                </div>
+
+                <div className="w-full bg-white/5 rounded-xl p-4 border border-white/5">
+                  <p className="font-medium text-white break-all mb-1">{incomingTransfer.file.name}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-widest">
+                    {(incomingTransfer.file.size / 1024 / 1024).toFixed(2)} MB • {incomingTransfer.file.type.split('/')[1] || 'FILE'}
+                  </p>
+                </div>
+
+                {transferProgress > 0 ? (
+                  <div className="w-full space-y-2">
+                    <div className="flex justify-between text-xs text-slate-400">
+                      <span>Receiving...</span>
+                      <span>{transferProgress}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#00CFD6] transition-all duration-300 ease-out"
+                        style={{ width: `${transferProgress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={declineTransfer}
+                      className="flex-1 py-3 rounded-xl font-bold text-slate-300 hover:bg-white/5 transition-colors"
+                    >
+                      Decline
+                    </button>
+                    <button
+                      onClick={acceptTransfer}
+                      className="flex-1 py-3 rounded-xl font-bold bg-[#00CFD6] text-black hover:bg-[#00CFD6]/90 transition-transform active:scale-95 shadow-[0_0_20px_rgba(0,207,214,0.2)]"
+                    >
+                      Accept
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
