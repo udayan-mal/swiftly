@@ -17,7 +17,7 @@ function App() {
   const [connectionError, setConnectionError] = useState('');
   const [targetId, setTargetId] = useState('');
 
-  const { socket, pairDevice, incomingTransfer, acceptTransfer, declineTransfer, transferProgress } = useSocket() || {};
+  const { socket, pairDevice, incomingTransfer, acceptTransfer, declineTransfer, transferProgress, sendTransferRequest } = useSocket() || {};
 
   // Reset state on tab switch
   useEffect(() => {
@@ -62,14 +62,26 @@ function App() {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setSelectedFiles(Array.from(e.dataTransfer.files));
-      e.dataTransfer.clearData();
+      // For MVP, handle single file drop
+      const file = e.dataTransfer.files[0];
+      if (isConnected && targetId) {
+        sendTransferRequest(file, targetId);
+        alert(`Sending request to ${targetId}...`);
+      } else {
+        alert('Please connect to a device first!');
+      }
     }
   };
 
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      setSelectedFiles(Array.from(e.target.files));
+      const file = e.target.files[0];
+      if (isConnected && targetId) {
+        sendTransferRequest(file, targetId);
+        alert(`Sending request to ${targetId}...`);
+      } else {
+        alert('Please connect to a device first!');
+      }
     }
   };
 
@@ -230,7 +242,7 @@ function App() {
                         : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                         }`}>
                         Choose Files
-                        <input type="file" multiple className="hidden" onChange={handleFileSelect} disabled={!isConnected} />
+                        <input type="file" className="hidden" onChange={handleFileSelect} disabled={!isConnected} />
                       </label>
                     </div>
                   </div>

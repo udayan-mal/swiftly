@@ -101,12 +101,23 @@ export const SocketProvider = ({ children }) => {
             }
         });
 
+        // Trigger file upload when Mobile accepts our request
+        newSocket.on('transfer-accepted', ({ responderId, fileId }) => {
+            console.log('Mobile accepted transfer!', responderId);
+            // In a real app we might check fileId, but for now we assume the current file
+            if (fileToSendRef.current) {
+                sendFileData(fileToSendRef.current, responderId);
+            }
+        });
+
         setSocket(newSocket);
 
         return () => {
             newSocket.close();
         };
     }, []);
+
+    const fileToSendRef = useRef(null);
 
     const acceptTransfer = () => {
         if (!incomingTransfer || !socket) return;
@@ -120,6 +131,49 @@ export const SocketProvider = ({ children }) => {
     const declineTransfer = () => {
         console.log('Declined transfer');
         setIncomingTransfer(null);
+    };
+
+    const sendTransferRequest = (file, targetId) => {
+        if (!socket) return;
+        fileToSendRef.current = file;
+        socket.emit('transfer-request', {
+            targetId,
+            file: {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            }
+        });
+    };
+
+    const sendFileData = (file, targetId) => {
+        const reader = new FileReader();
+        const CHUNK_SIZE = 64 * 1024; // 64KB
+
+        reader.onload = () => {
+            const base64Data = reader.result.split(',')[1]; // Remove data URL prefix
+            const totalChunks = Math.ceil(base64Data.length / CHUNK_SIZE);
+
+            for (let i = 0; i < totalChunks; i++) {
+                const chunk = base64Data.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+                socket.emit('file-chunk', {
+                    targetId,
+                    chunk,
+                    chunkIndex: i,
+                    totalChunks
+                });
+
+                // Update local progress (optional, reusing same state for simplicity)
+                setTransferProgress(Math.round(((i + 1) / totalChunks) * 100));
+            }
+
+            socket.emit('transfer-complete', { targetId });
+            setTransferProgress(0);
+            fileToSendRef.current = null;
+            alert('File Sent Successfully!');
+        };
+
+        reader.readAsDataURL(file);
     };
 
     const pairDevice = (targetId) => {
@@ -165,7 +219,8 @@ export const SocketProvider = ({ children }) => {
         incomingTransfer,
         acceptTransfer,
         declineTransfer,
-        transferProgress
+        transferProgress,
+        sendTransferRequest
     };
 
     return (
