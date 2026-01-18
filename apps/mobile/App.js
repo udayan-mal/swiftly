@@ -1,12 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, Platform, Alert } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Platform, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { io } from "socket.io-client";
 import { useEffect, useState } from 'react';
 import Scanner from './src/components/Scanner';
+import * as DocumentPicker from 'expo-document-picker';
 
 // Replace with your computer's local IP address (e.g., 192.168.1.X)
 // 'localhost' only works on iOS Simulator, use '10.0.2.2' for Android Emulator
-const SERVER_URL = 'http://192.168.1.5:3001';
+const SERVER_URL = 'http://192.168.0.100:3001';
 
 export default function App() {
   const [socket, setSocket] = useState(null);
@@ -39,6 +41,43 @@ export default function App() {
     setView('home');
     Alert.alert("Connected!", `Paired with ${data}`);
     // Here we would trigger the signaling handshake
+  };
+
+  const pickDocument = async () => {
+    if (!isConnected) {
+      Alert.alert("Error", "Not connected to server");
+      return;
+    }
+    if (!targetId) {
+      Alert.alert("Error", "Scan a QR code first!");
+      return;
+    }
+
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*', // Allow all file types
+        copyToCacheDirectory: true,
+      });
+
+      if (result.assets && result.assets.length > 0) {
+        const file = result.assets[0];
+        console.log('File selected:', file);
+
+        // Emit transfer request to signaling server
+        socket.emit('transfer-request', {
+          targetId: targetId,
+          file: {
+            name: file.name,
+            size: file.size,
+            type: file.mimeType,
+          }
+        });
+
+        Alert.alert("Sent Request", `Asking ${targetId} to accept ${file.name}...`);
+      }
+    } catch (err) {
+      console.error("Error picking document:", err);
+    }
   };
 
   if (view === 'scanner') {
@@ -75,7 +114,7 @@ export default function App() {
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity style={styles.buttonSecondary}>
+          <TouchableOpacity style={styles.buttonSecondary} onPress={pickDocument}>
             <Text style={styles.buttonTextSecondary}>Select File</Text>
           </TouchableOpacity>
         </View>

@@ -1,6 +1,7 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Scanner({ onScanned, onCancel }) {
     const [permission, requestPermission] = useCameraPermissions();
@@ -23,21 +24,20 @@ export default function Scanner({ onScanned, onCancel }) {
     return (
         <View style={styles.container}>
             <CameraView
-                style={styles.camera}
+                style={StyleSheet.absoluteFillObject}
                 facing="back"
                 onBarcodeScanned={({ data }) => {
                     onScanned(data);
                 }}
-            >
-                <View style={styles.overlay}>
-                    <View style={styles.scanFrame} />
-                    <Text style={styles.scanText}>Scan the QR Code on your Computer</Text>
+            />
+            <View style={styles.overlay}>
+                <View style={styles.scanFrame} />
+                <Text style={styles.scanText}>Scan the QR Code on your Computer</Text>
 
-                    <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
-                        <Text style={styles.cancelText}>Cancel</Text>
-                    </TouchableOpacity>
-                </View>
-            </CameraView>
+                <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
+                    <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }

@@ -11,7 +11,23 @@ function App() {
   const [activeTab, setActiveTab] = useState('send');
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [targetId, setTargetId] = useState('');
+  const [isPaired, setIsPaired] = useState(false);
   const { socket } = useSocket() || {};
+
+  const handleConnect = () => {
+    if (!targetId.trim()) {
+      alert('Please enter a Connection ID');
+      return;
+    }
+    if (!socket) {
+      alert('Not connected to server');
+      return;
+    }
+    // For now, just mark as paired - actual signaling will be added later
+    setIsPaired(true);
+    alert(`Paired with ${targetId}!`);
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -112,28 +128,63 @@ function App() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
-                  className="flex flex-col items-center space-y-8 py-8"
+                  className="flex flex-col items-center space-y-6 py-6"
                 >
-                  <div className={`
-                       w-40 h-40 rounded-full flex items-center justify-center transition-all duration-500
-                       ${isDragging ? 'bg-[#00CFD6]/20 scale-110' : 'bg-gradient-to-tr from-blue-500/10 to-[#00CFD6]/10 border border-white/5 group-hover:scale-105'}
-                    `}>
-                    <Logo size={96} className={`transition-transform duration-500 ${isDragging ? 'scale-110' : ''}`} color="#00CFD6" />
+                  {/* Connect to Device Section */}
+                  <div className="w-full space-y-4">
+                    <p className="text-sm text-slate-500 uppercase tracking-widest font-semibold text-center">Connect to Device</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={targetId}
+                        onChange={(e) => setTargetId(e.target.value)}
+                        placeholder="Enter Connection ID"
+                        className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 font-mono focus:outline-none focus:border-[#00CFD6]/50 focus:ring-1 focus:ring-[#00CFD6]/30 transition-all"
+                      />
+                      <button
+                        onClick={handleConnect}
+                        disabled={isPaired}
+                        className={`px-6 py-3 font-bold rounded-xl transition-all duration-300 ${isPaired
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30 cursor-default'
+                          : 'bg-[#00CFD6] text-black hover:bg-[#00CFD6]/80 hover:scale-105'
+                          }`}
+                      >
+                        {isPaired ? '✓ Paired' : 'Connect'}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="text-center space-y-2">
-                    <h3 className="text-2xl font-bold text-white">
-                      {selectedFiles.length > 0 ? `${selectedFiles.length} File(s) Selected` : (isDragging ? 'Drop files to send' : 'Upload Files')}
-                    </h3>
-                    <p className="text-slate-400 max-w-[200px] mx-auto leading-relaxed">
-                      {selectedFiles.length > 0 ? selectedFiles.map(f => f.name).join(', ') : 'Drag and drop your files here or click to browse'}
-                    </p>
+                  {/* Divider */}
+                  <div className="w-full flex items-center gap-4">
+                    <div className="flex-1 h-px bg-white/10"></div>
+                    <span className="text-slate-500 text-sm">then select files</span>
+                    <div className="flex-1 h-px bg-white/10"></div>
                   </div>
 
-                  <label className="cursor-pointer px-10 py-4 bg-white text-black font-bold rounded-2xl hover:bg-[#00CFD6] hover:text-white hover:scale-105 hover:shadow-[0_0_30px_rgba(0,207,214,0.3)] transition-all duration-300 transform active:scale-95">
-                    Choose Files
-                    <input type="file" multiple className="hidden" onChange={handleFileSelect} />
-                  </label>
+                  {/* File Selection */}
+                  <div
+                    className={`w-full p-6 rounded-2xl border-2 border-dashed transition-all duration-300 ${isDragging ? 'border-[#00CFD6] bg-[#00CFD6]/10' : 'border-white/10 hover:border-white/20'
+                      } ${!isPaired ? 'opacity-50 pointer-events-none' : ''}`}
+                  >
+                    <div className="flex flex-col items-center space-y-4">
+                      <Logo size={48} color={isPaired ? "#00CFD6" : "#666"} />
+                      <div className="text-center">
+                        <h3 className="text-lg font-bold text-white">
+                          {selectedFiles.length > 0 ? `${selectedFiles.length} File(s) Selected` : 'Select Files to Send'}
+                        </h3>
+                        <p className="text-slate-400 text-sm">
+                          {selectedFiles.length > 0 ? selectedFiles.map(f => f.name).join(', ') : 'Drag & drop or click below'}
+                        </p>
+                      </div>
+                      <label className={`cursor-pointer px-8 py-3 font-bold rounded-xl transition-all duration-300 ${isPaired
+                        ? 'bg-white text-black hover:bg-[#00CFD6] hover:text-white'
+                        : 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                        }`}>
+                        Choose Files
+                        <input type="file" multiple className="hidden" onChange={handleFileSelect} disabled={!isPaired} />
+                      </label>
+                    </div>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div
