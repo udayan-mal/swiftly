@@ -16,9 +16,28 @@ const io = new Server(server, {
 
 // Store room state (simple in-memory for this MVP)
 const rooms = new Map();
+// Store active users for Lobby Discovery
+const activeUsers = new Map(); // socketId -> { deviceType, deviceName }
 
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+
+  // LOBBY: Register Device
+  socket.on('register-device', ({ deviceType, deviceName }) => {
+    activeUsers.set(socket.id, { deviceType, deviceName });
+    console.log(`Registered: ${deviceName} (${deviceType}) - ${socket.id}`);
+  });
+
+  // LOBBY: Find Peers
+  socket.on('find-peers', () => {
+    const peers = [];
+    for (const [id, info] of activeUsers.entries()) {
+      if (id !== socket.id) {
+        peers.push({ id, ...info });
+      }
+    }
+    socket.emit('peers-found', peers);
+  });
 
   // Handle joining a room (for discovery)
   socket.on('join-room', (roomId) => {
@@ -43,20 +62,20 @@ io.on('connection', (socket) => {
   });
 
   // Pairing Handshake
-  socket.on('pairing-request', ({ targetId }) => {
+  socket.on('pairing-request', ({ targetId, publicKey }) => {
     // Check if target exists
     const targetSocket = io.sockets.sockets.get(targetId);
     if (targetSocket) {
       console.log(`Pairing request: ${socket.id} -> ${targetId}`);
-      io.to(targetId).emit('pairing-request', { requesterId: socket.id });
+      io.to(targetId).emit('pairing-request', { requesterId: socket.id, publicKey });
     } else {
       socket.emit('pairing-error', { message: 'Target device not found' });
     }
   });
 
-  socket.on('pairing-response', ({ targetId, accepted }) => {
+  socket.on('pairing-response', ({ targetId, accepted, publicKey }) => {
     console.log(`Pairing response from ${socket.id} to ${targetId}: ${accepted}`);
-    io.to(targetId).emit('pairing-response', { responderId: socket.id, accepted });
+    io.to(targetId).emit('pairing-response', { responderId: socket.id, accepted, publicKey });
   });
 
   // File Transfer Request (Metadata)
@@ -71,9 +90,9 @@ io.on('connection', (socket) => {
     io.to(targetId).emit('transfer-accepted', { responderId: socket.id, fileId });
   });
 
-  socket.on('file-chunk', ({ targetId, chunk, chunkIndex, totalChunks }) => {
+  socket.on('file-chunk', ({ targetId, chunk, nonce, chunkIndex, totalChunks }) => {
     // Relay chunk directly to target (optimize in prod: use binary streams)
-    io.to(targetId).emit('file-chunk', { chunk, chunkIndex, totalChunks });
+    io.to(targetId).emit('file-chunk', { chunk, nonce, chunkIndex, totalChunks });
   });
 
   socket.on('transfer-complete', ({ targetId }) => {
@@ -83,7 +102,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
-    // Optional: Notify rooms this socket was in
+    activeUsers.delete(socket.id);
   });
 });
 

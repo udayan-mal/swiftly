@@ -17,12 +17,75 @@ function App() {
   const [connectionError, setConnectionError] = useState('');
   const [targetId, setTargetId] = useState('');
 
-  const { socket, pairDevice, incomingTransfer, acceptTransfer, declineTransfer, transferProgress, sendTransferRequest } = useSocket() || {};
+  const {
+    socket,
+    pairDevice,
+    incomingTransfer,
+    acceptTransfer,
+    declineTransfer,
+    transferProgress,
+    sendTransferRequest,
+    findPeers,
+    nearbyPeers,
+    pairedPeerId,
+    isConnected: isSocketConnected,
+    disconnectPeer
+  } = useSocket() || {};
+
+  // Sync Global Pairing State to Local UI
+  useEffect(() => {
+    if (pairedPeerId) {
+      setTargetId(pairedPeerId);
+      setConnectionStatus('connected');
+    } else if (isSocketConnected) {
+      // Only reset if we were connected but now pairedPeerId is null (disconnect)
+      if (connectionStatus === 'connected') {
+        setTargetId('');
+        setConnectionStatus('idle');
+      }
+    }
+  }, [pairedPeerId, isSocketConnected, connectionStatus]);
+
+  // Handle disconnect
+  const handleDisconnect = () => {
+    if (confirm('Are you sure you want to disconnect from this device?')) {
+      disconnectPeer?.();
+      setTargetId('');
+      setConnectionStatus('idle');
+    }
+  };
+
+  // Auto-scan for peers when not connected
+  useEffect(() => {
+    if (socket && !targetId && !pairedPeerId) {
+      findPeers?.();
+      const interval = setInterval(() => {
+        findPeers?.();
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [socket, targetId, pairedPeerId]);
 
   // Reset state on tab switch
   useEffect(() => {
     // Optional: could warn user here if they are connected
   }, [activeTab]);
+
+  const connectToPeer = (peerId) => {
+    setTargetId(peerId);
+    setConnectionStatus('connecting');
+    pairDevice(peerId)
+      .then(() => {
+        setConnectionStatus('connected');
+        alert(`Connected to ${peerId}`);
+      })
+      .catch(err => {
+        setConnectionStatus('failed');
+        setConnectionError(err.message);
+        setTargetId('');
+        setTimeout(() => setConnectionStatus('idle'), 3000);
+      });
+  };
 
   const handleConnect = async () => {
     if (!targetId.trim()) {
@@ -128,6 +191,7 @@ function App() {
         <div className="w-full max-w-md relative">
 
           {/* Tab Switcher */}
+          {/* Tab Switcher */}
           <div className="grid grid-cols-2 p-1.5 bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-white/5 mb-8 relative shadow-2xl">
             {/* Active Tab Background Pill */}
             <div
@@ -147,6 +211,38 @@ function App() {
               Receive
             </button>
           </div>
+
+          {/* NEARBY DEVICES LIST */}
+          {!targetId && nearbyPeers && nearbyPeers.length > 0 && (
+            <div className="mb-6 animate-fade-in-up">
+              <p className="text-xs text-slate-500 uppercase tracking-widest font-bold mb-3 pl-2">Nearby Devices</p>
+              <div className="space-y-2">
+                {nearbyPeers.map(peer => (
+                  <button
+                    key={peer.id}
+                    onClick={() => connectToPeer(peer.id)}
+                    className="w-full flex items-center justify-between p-4 rounded-xl bg-slate-800/50 hover:bg-slate-800 border border-white/5 hover:border-[#00CFD6]/30 transition-all group backdrop-blur-md"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-700/50 flex items-center justify-center text-xl">
+                        {peer.deviceType === 'mobile' ? '📱' : '💻'}
+                      </div>
+                      <div className="text-left">
+                        <div className="text-sm font-bold text-slate-200 group-hover:text-white">
+                          {peer.deviceName || 'Unknown Device'}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-mono">ID: {peer.id.slice(0, 6)}...</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      <span className="text-xs font-bold text-[#00CFD6]">CONNECT</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Main Card */}
           <div
@@ -204,22 +300,37 @@ function App() {
                       )}
 
                       <button
-                        onClick={handleConnect}
-                        disabled={isConnected || connectionStatus === 'connecting'}
+                        onClick={isConnected ? handleDisconnect : handleConnect}
+                        disabled={connectionStatus === 'connecting'}
                         className={`px-6 py-3 font-bold rounded-xl transition-all duration-300 min-w-[100px] flex items-center justify-center ${isConnected
-                          ? 'bg-green-500/20 text-green-400 border border-green-500/30 cursor-default'
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30'
                           : 'bg-[#00CFD6] text-black hover:bg-[#00CFD6]/80 hover:scale-105 disabled:opacity-70 disabled:hover:scale-100'
                           }`}
+                        title={isConnected ? 'Click to disconnect' : 'Connect to device'}
                       >
                         {connectionStatus === 'connecting' ? (
                           <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin"></div>
                         ) : isConnected ? (
-                          '✓ Paired'
+                          <span className="group-hover:hidden">✓ Paired</span>
                         ) : (
                           'Connect'
                         )}
                       </button>
                     </div>
+
+                    {/* Disconnect hint when paired */}
+                    {isConnected && (
+                      <p className="text-xs text-slate-500 text-center mt-2">
+                        Connected to <span className="text-[#00CFD6] font-mono">{targetId?.slice(0, 8)}...</span>
+                        {' · '}
+                        <button 
+                          onClick={handleDisconnect}
+                          className="text-red-400 hover:text-red-300 underline"
+                        >
+                          Disconnect
+                        </button>
+                      </p>
+                    )}
                   </div>
 
                   {/* Divider */}

@@ -14,5 +14,8 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native-renderer": "19.1.0"
+  },
+  "dependencies": {
+    "expo-clipboard": "~8.0.8"
   }
 }
