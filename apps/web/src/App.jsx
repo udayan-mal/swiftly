@@ -127,6 +127,10 @@ function App() {
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       // For MVP, handle single file drop
       const file = e.dataTransfer.files[0];
+      if (!isSocketConnected) {
+        alert('Not connected to server. Please wait or refresh the page.');
+        return;
+      }
       if (isConnected && targetId) {
         sendTransferRequest(file, targetId);
         alert(`Sending request to ${targetId}...`);
@@ -139,6 +143,10 @@ function App() {
   const handleFileSelect = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      if (!isSocketConnected) {
+        alert('Not connected to server. Please wait or refresh the page.');
+        return;
+      }
       if (isConnected && targetId) {
         sendTransferRequest(file, targetId);
         alert(`Sending request to ${targetId}...`);
@@ -376,7 +384,7 @@ function App() {
                 >
                   <div className="relative group cursor-pointer">
                     {/* QR Code Display */}
-                    {socket?.id ? (
+                    {isSocketConnected && socket?.id ? (
                       <div className="relative">
                         <QRCodeDisplay text={socket.id} width={256} />
                         {/* Overlay for instructions if needed, or keeping it clean */}
@@ -396,7 +404,7 @@ function App() {
 
                     <div
                       onClick={() => {
-                        if (socket?.id) {
+                        if (isSocketConnected && socket?.id) {
                           navigator.clipboard.writeText(socket.id);
                           alert('ID Copied to clipboard!');
                         }
@@ -404,7 +412,7 @@ function App() {
                       className="group relative inline-flex items-center gap-2 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-[#00CFD6]/50 rounded-xl cursor-pointer transition-all duration-300"
                     >
                       <span className="font-mono text-[#00CFD6] text-lg select-all max-w-[280px] truncate sm:max-w-none sm:overflow-visible">
-                        {socket?.id || 'Connecting...'}
+                        {isSocketConnected && socket?.id ? socket.id : 'Connecting...'}
                       </span>
 
                       {/* Copy Icon */}

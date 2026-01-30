@@ -11,8 +11,11 @@ import * as Sharing from 'expo-sharing';
 import Logo from './src/components/Logo';
 import { generateKeyPair, encodeKey, decryptChunk, encryptChunk, computeSharedSecret } from './src/utils/crypto';
 
-// Replace with your computer's local IP address (e.g., 192.168.1.X)
-// 'localhost' only works on iOS Simulator, use '10.0.2.2' for Android Emulator
+// Server Configuration - UPDATE THIS to your computer's local IP address
+// To find your IP: Windows: ipconfig | macOS/Linux: ifconfig
+// Use your computer's IP on the local network (e.g., 192.168.1.X)
+// Note: 'localhost' only works on iOS Simulator
+// Note: '10.0.2.2' is the host machine from Android Emulator
 const SERVER_URL = 'http://192.168.0.101:3001';
 
 // Production limits
@@ -500,7 +503,9 @@ export default function App() {
           {isTransferring ? (
             <View style={styles.transferContainer}>
               <ActivityIndicator size="large" color="#00CFD6" />
-              <Text style={styles.progressText}>Transferring...</Text>
+              <Text style={styles.progressText}>
+                {transferInfo || 'Transferring...'}
+              </Text>
               <View style={styles.progressBarBg}>
                 <View style={[styles.progressBarFill, { width: `${progress}%` }]} />
               </View>

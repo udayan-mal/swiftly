@@ -5,7 +5,9 @@ import { generateKeyPair, encodeKey, decodeKey, computeSharedSecret, encryptChun
 const SocketContext = createContext();
 
 // Server URL - can be overridden by environment variable
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://192.168.0.101:3001';
+// Use localhost for local development, override with VITE_SERVER_URL for production
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 
+    (window.location.hostname === 'localhost' ? 'http://localhost:3001' : `http://${window.location.hostname}:3001`);
 
 export const useSocket = () => {
     return useContext(SocketContext);
@@ -84,7 +86,7 @@ export const SocketProvider = ({ children }) => {
 
         newSocket.on('reconnect_attempt', (attemptNumber) => {
             console.log('Reconnection attempt:', attemptNumber);
-            setConnectionError(`Reconnecting... (attempt ${attemptNumber})`);
+            // Don't set error during reconnect attempts, just log
         });
 
         newSocket.on('reconnect', (attemptNumber) => {

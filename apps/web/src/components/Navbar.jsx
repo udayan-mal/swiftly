@@ -5,6 +5,14 @@ import { useSocket } from '../contexts/SocketContext';
 export default function Navbar({ onHistoryClick, onConnectClick }) {
     // Safely destructure isConnected, defaulting to false if context is missing/loading
     const { isConnected, connectionError } = useSocket() || { isConnected: false, connectionError: null };
+    
+    // Determine display status - prioritize connection state over transient errors
+    const getStatus = () => {
+        if (isConnected) return { text: 'Online', color: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse' };
+        if (connectionError) return { text: 'Error', color: 'bg-rose-500' };
+        return { text: 'Offline', color: 'bg-amber-500' };
+    };
+    const status = getStatus();
 
     return (
         <nav 
@@ -28,11 +36,11 @@ export default function Navbar({ onHistoryClick, onConnectClick }) {
                             </span>
                             <div className="flex items-center gap-1.5 mt-1">
                                 <span 
-                                    className={`flex h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse' : 'bg-rose-500'}`}
+                                    className={`flex h-2 w-2 rounded-full ${status.color}`}
                                     aria-hidden="true"
                                 ></span>
                                 <span className="text-[10px] uppercase tracking-widest font-mono text-slate-500 font-bold">
-                                    {connectionError ? 'Error' : isConnected ? 'Online' : 'Offline'}
+                                    {status.text}
                                 </span>
                             </div>
                         </div>
